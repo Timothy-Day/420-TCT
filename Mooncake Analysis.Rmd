@@ -1,0 +1,279 @@
+---
+title: "Mooncake Analysis"
+author: "Timothy Alexander Day"
+date: "8/2/2019"
+output: html_document
+---
+
+```{r itzasetup-1, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+
+library(dplyr)
+library(plotly)
+library(tidyverse)
+
+df.000 <- read.csv('/Users/dayti/NYCDSA/Projects/C-ChemComp/Terpene-Profile-Parser-for-Cannabis-Strains-master/results.csv')
+
+```
+
+
+I took a look at the number of duplicates by 'Sample.Name'.  There were 15,323 such samples leaving a total of 27,693 observations (culled from 43,016).   I hesitate to utilize this as research indicates that in the field individual samples are known more often than not to be taxonomically disparate. However, for purposes of exposition, it will be rather clumsy to have output indicating same samples.  
+
+Follow-up work will need to look into this by comparing the individual grouped samples.
+
+
+```{r itzasetup-2}
+
+df.001 <-
+  df.000 %>%
+  group_by(., Sample.Name) %>%
+  summarise_if(., is.numeric, mean, na.rm = TRUE) %>%
+  .[rowSums(is.na(.)) != (ncol(.)-3), ] %>%
+  select(.,-Provider,-Moisture.Content) %>%
+  subset(., Sample.Name != 'Nerolidol')
+
+# Aggregate all like isomers.  Note to self:  Run this by Debbie.
+
+df.001$Nerolidol <- rowSums(df.001[, c('cis.Nerolidol','trans.Nerolidol','trans.Nerolidol.1','trans.Nerolidol.2')], na.rm = TRUE) *
+  ifelse(rowSums(is.na(df.001[, c('cis.Nerolidol','trans.Nerolidol','trans.Nerolidol.1','trans.Nerolidol.2')])) == ncol(df.001[, c('cis.Nerolidol','trans.Nerolidol','trans.Nerolidol.1','trans.Nerolidol.2')]), NA, 1)
+
+df.001$Caryophyllene <- rowSums(df.001[, c('Caryophyllene.Oxide','beta.Caryophyllene')], na.rm = TRUE) *
+  ifelse(rowSums(is.na(df.001[, c('Caryophyllene.Oxide','beta.Caryophyllene')])) == ncol(df.001[, c('Caryophyllene.Oxide','beta.Caryophyllene')]), NA, 1)
+
+df.001$CBG <- rowSums(df.001[,c('delta.9.CBG.A','delta.9.CBG')], na.rm = TRUE) *
+  ifelse(rowSums(is.na(df.001[, c('delta.9.CBG.A','delta.9.CBG')])) == ncol(df.001[, c('delta.9.CBG.A','delta.9.CBG')]), NA, 1)
+
+df.001$CBD <- rowSums(df.001[,c('CBD.A','CBD','CBDV','CBDV.A')], na.rm = TRUE) *
+  ifelse(rowSums(is.na(df.001[, c('CBD.A','CBD','CBDV','CBDV.A')])) == ncol(df.001[, c('CBD.A','CBD','CBDV','CBDV.A')]), NA, 1)
+
+df.001$Terpinolene <- rowSums(df.001[,c('Terpinolene','alpha.Terpinene','gamma.Terpinene')], na.rm = TRUE) *
+  ifelse(rowSums(is.na(df.001[, c('Terpinolene','alpha.Terpinene','gamma.Terpinene')])) == ncol(df.001[, c('Terpinolene','alpha.Terpinene','gamma.Terpinene')]), NA, 1)
+
+
+df.001$Ocimene <- rowSums(df.001[,c('trans.Ocimene','beta.Ocimene','Ocimene')], na.rm = TRUE) *
+  ifelse(rowSums(is.na(df.001[, c('trans.Ocimene','beta.Ocimene','Ocimene')])) == ncol(df.001[, c('trans.Ocimene','beta.Ocimene','Ocimene')]), NA, 1)
+
+df.001$Pinene <- rowSums(df.001[,c('alpha.Pinene','beta.Pinene')], na.rm = TRUE) *
+  ifelse(rowSums(is.na(df.001[, c('alpha.Pinene','beta.Pinene')])) == ncol(df.001[, c('alpha.Pinene','beta.Pinene')]), NA, 1)
+
+df.001$THC <- rowSums(df.001[,c('delta.9.THC.A','delta.9.THC','delta.8.THC','THC.A','THCV')], na.rm =
+                                  TRUE) *
+  ifelse(rowSums(is.na(df.001[, c('delta.9.THC.A','delta.9.THC','delta.8.THC','THC.A','THCV')])) == ncol(df.001[, c('delta.9.THC.A','delta.9.THC','delta.8.THC','THC.A','THCV')]), NA, 1)
+
+
+
+df.001$Cymene = df.001$p.Cymene 
+df.001$Humulene=df.001$alpha.Humulene
+df.001$Limonene=df.001$delta.Limonene
+df.001$Myrcene=df.001$beta.Myrcene
+df.001$Bisabolo=df.001$alpha.Bisabolol
+df.001$Carene=df.001$X3.Carene
+
+
+df.001 = 
+  df.001 %>%
+  select(.,-cis.Nerolidol,-trans.Nerolidol,-trans.Nerolidol.1,-trans.Nerolidol.2,
+                            -Caryophyllene.Oxide,-beta.Caryophyllene,
+                            -delta.9.CBG.A,-delta.9.CBG,
+                           -CBD.A,-CBDV,-CBDV.A,
+                           -alpha.Terpinene,-gamma.Terpinene,
+                           -trans.Ocimene,-beta.Ocimene,
+                           -alpha.Pinene,-beta.Pinene,
+                           -delta.9.THC.A,-delta.9.THC,-delta.8.THC,-THC.A,-THCV,
+                           -p.Cymene,
+                           -alpha.Humulene,
+                           -delta.Limonene,
+                           -beta.Myrcene,
+                           -alpha.Bisabolol,
+                           -X3.Carene)
+
+df.001 <-
+  df.001 %>% subset(., select=c("Sample.Name",
+                                       "THC",
+                                       "CBC",
+                                       "CBD",
+                                       "CBG",
+                                       "CBN",
+                                       "Bisabolo",
+                                       "Camphene",
+                                       "Carene",
+                                       "Caryophyllene",
+                                       "Cymene",
+                                       "Eucalyptol",
+                                       "Geraniol",
+                                       "Guaiol",
+                                       "Humulene",
+                                       "Isopulegol",
+                                       "Limonene",
+                                       "Linalool",
+                                       "Myrcene",
+                                       "Nerolidol",
+                                       "Ocimene",
+                                       "Pinene",
+                                       "Terpinolene"))
+
+
+cols = colnames(df.001[,2:23])
+chems = df.001[, 2:23]  
+turpenes = df.001[7:23]
+
+
+```
+
+
+## I. Exploratory Analysis
+
+```{r goodspeed-1}
+chems_obs <-
+  chems %>%
+  gather(.,Compound)%>%
+  group_by(., Compound) %>%
+  summarise_all(., funs(Observations = sum(!is.na(.)),
+                        Mean = mean(!is.na(.)),
+                        Median = median(.,na.rm=TRUE),
+                        Std.Dev = sd(!is.na(.)))
+                ) %>% 
+  arrange(desc(Observations))
+
+chems_obs
+
+```
+
+Let's graph this now using plotly.  User interface? 
+
+```{r goodspeed-2}
+
+chems_obs$Compound <-
+  factor(chems_obs$Compound, levels = unique(chems_obs$Compound)[order(chems_obs$Observations, decreasing = TRUE)])
+
+chems_obs.plot <-
+  plot_ly(
+    chems_obs,
+    x = ~ Compound,
+    y = ~ Observations,
+    name = "Number of Observations",
+    type = "bar",
+    marker = list(color = 'rgb(230, 204, 255))',
+                           line = list(color = 'rgb(8,48,107)', width = 1.5)))
+
+chems_obs.plot
+
+```
+
+## Histogram of different compounds.  Note: to extend to a function for user interface to select different compounds using a drop-down interface.
+
+
+```{r goodspeed-3}
+chems_obs.histo <- 
+plot_ly(df.001, 
+        type = 'histogram', 
+        x = ~ CBD, 
+        name = 'CBD', 
+        color = '#ff99ff', 
+        alpha = 0.6)
+chems_obs.histo
+
+```
+
+## Selecting the strains with highest concentration of a specific chemical and displaying their 5 closest relatives.  Use a simple maximum.  This ignores the cross-effects (dimensionality).
+
+```{r mooncake-1}
+
+t_select = 'Carene'
+t_n = 10
+
+t_sample <-
+  df.001 %>%
+  filter(., !is.na(!!rlang::sym(t_select)) & !!rlang::sym(t_select) > 0) %>%
+  arrange(., desc(!!rlang::sym(t_select))) %>% 
+  mutate_if(is.numeric, round, digits = 4)
+
+compound_select = t_sample[1:t_n,]
+
+compound_select
+
+```
+
+Scatterplot of a subset of the dataset based on three user-selections.  The color is based on THC content.  That could be adjusted.
+
+
+```{r mooncake-2}
+
+input_1 = 'Bisabolo' 
+input_2 = 'CBD'
+input_3 = 'CBN'
+# input_4 = 'THC' 
+
+
+df.001_sample.scatter <- plot_ly(
+  df.001,
+  x = ~ Carene,
+  y = ~ CBD,
+  z = ~ CBN,
+  type = 'scatter3d',
+  hoverinfo = 'text',
+  text = ~paste(Sample.Name,
+                 'THC: ', THC,
+                 'CBD: ', CBD,
+                 'CBN: ', CBN),
+  color = ~THC, colors = 'PuRd', marker = list(opacity = 0.5)
+  ) %>%
+  add_markers() %>%
+  layout(scene = list(
+    xaxis = list(title = 'THC'),
+    yaxis = list(title = 'CBD'),
+    zaxis = list(title = 'CBN')
+  ))
+
+  df.001_sample.scatter 
+```
+
+
+
+
+
+## TIME PERMITING
+
+Look into a map of chems to their uses in a chart-like format.
+
+## Strain Type Selector & Display
+
+"The outcome was never in our favor, Gary."
+
+The goal is to construct a map of balls where each ball is a strain of size equal to the size of the compound.  
+
+Given strain, 's', and compound, 'c', construct a field of 'm' balls using 'n' compounds.  
+
+1.  Find the subset of strains, 'S', that contain 'c'.
+2.  Find the distance of 's' to each element of S. In the above, we use the rank of strains in S by c. However, the geometric mean using all   compounds is ideal.  To do this, we must either:
+    2.1. Select only strains that have all same compound measurements available or 
+    2.2. Standardize each random variable and make an assumption regarding NAs.   
+
+For (i) we must determine there are adequate samples whilst (ii) is computationally intensive, as we will be making roughly (27*10^3)^2 distance calculations using 20+ variables. 
+
+Step 1. 
+A middle ground would be to select (i) using three verus one compound(s), select the top 10 by a metric, that is 'c', then rank by 'c' and select the top 5 for purposes of graphing.  
+
+Step 2.
+Make a scatterplot of S using the top three compounds.
+
+Step 3.  Make 1 3D distance graph using 3 compounds for S. (time permitting)
+
+```{r mooncake32}
+ts_select = 'Carene' #this needs to be selected first, then pick s_select
+s_select = '"CBD" Hash'
+t_n = 5
+
+s_sample <-
+  df.001 %>%
+  filter(., !is.na(!!rlang::sym(ts_select)) & !!rlang::sym(ts_select) > 0) %>%
+  arrange(., desc(!!rlang::sym(ts_select))) %>% 
+  mutate_if(is.numeric, round, digits = 4)
+
+strain_select = s_sample[1:t_n,]
+
+```
+
+
+
+Note that the `echo = FALSE` parameter was added to the code chunk to prevent printing of the R code that generated the plot.
