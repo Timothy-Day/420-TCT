@@ -41,7 +41,7 @@ shinyServer(function(input, output) {
                 type = 'histogram', 
                 x =  ~ get(input$chems_obs.histo_input), 
                 name = 'THC', 
-                color = '#8B008B', 
+                marker = list(color = '#8B008B'), 
                 alpha = 1.0)
     }) 
 
@@ -81,13 +81,13 @@ shinyServer(function(input, output) {
                           '<br>', as.character(input$sample_scatter_dim1_input),': ', get(input$sample_scatter_dim1_input),
                           '<br>', as.character(input$sample_scatter_dim2_input),': ', get(input$sample_scatter_dim2_input),
                           '<br>', as.character(input$sample_scatter_dim3_input),': ', get(input$sample_scatter_dim3_input)),
-            color = ~get(input$sample_scatter_color_input), colors = 'PuRd', marker = list(opacity = 0.5)
+            color = ~get(input$sample_scatter_color_input), colors = 'PuRd', marker = list(title = input$sample_scatter_color_input, opacity = 0.5)
         ) %>%
             add_markers() %>%
             layout(scene = list(
                 xaxis = list(title = input$sample_scatter_dim1_input),
-                yaxis = list(title = input$sample_scatter_dim1_inpu),
-                zaxis = list(title = input$sample_scatter_dim1_inpu)
+                yaxis = list(title = input$sample_scatter_dim2_input),
+                zaxis = list(title = input$sample_scatter_dim3_input)
             ))
     })
 
