@@ -85,16 +85,14 @@ shinyServer(function(input, output) {
         ) %>%
             add_markers() %>%
             layout(scene = list(
-                xaxis = list(title = input$sample_scatter_dim1_input),
-                yaxis = list(title = input$sample_scatter_dim1_inpu),
-                zaxis = list(title = input$sample_scatter_dim1_inpu)
+                xaxis = list(title = 'THC'),
+                yaxis = list(title = 'CBD'),
+                zaxis = list(title = 'CBN')
             ))
     })
 
 # Strain Select Table ####
-# Note that the below does not work as I want.  Working on it. Think I need to take the user-defined (strain,compound), \
-    #determine the rank of the strain  relative to other strains that contain that compound, and take the nearest neighbors ...
-    
+
     output$strain_select <- DT::renderDataTable(DT::datatable({
         ts_select = input$strain_select_compound 
         s_select = input$strain_select_strain
